@@ -35,6 +35,7 @@ const CARRIERS = {
   boost:      "Boost",
   uscellular: "US Cellular",
   virgin:     "Virgin",
+  tracfone: "TracFone",
 };
 
 // Maps a mood score number to an emoji for the trend display.
