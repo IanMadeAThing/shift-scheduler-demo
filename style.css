@@ -1,125 +1,288 @@
-body {
-  font-family: 'Segoe UI', sans-serif;
-  background: #f9fafc;
-  color: #333;
-  text-align: center;
+/* ============================================================
+   CHURCH VOLUNTEER MANAGER — style.css
+   Organised top to bottom in the order things appear on screen:
+   1. Reset
+   2. Body
+   3. Header
+   4. Loading bar + error banner
+   5. Nav tabs
+   6. Tab panels
+   7. Cards
+   8. Form rows
+   9. Tables + badges
+   10. Buttons
+   11. Modal
+   12. Toast
+   13. Mood trends + alert legend
+   ============================================================ */
+
+
+/* ── 1. RESET ─────────────────────────────────────────────── */
+/* Removes browser default spacing so we start from a clean slate */
+*, *::before, *::after {
+  box-sizing: border-box;
   margin: 0;
+  padding: 0;
+}
+
+
+/* ── 2. BODY ──────────────────────────────────────────────── */
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  background: #f5f3ff;
+  color: #1e1b4b;
+  font-size: 14px;
+}
+
+
+/* ── 3. HEADER ────────────────────────────────────────────── */
+header {
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  color: #fff;
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+header .logo   { font-size: 28px; }
+header h1      { font-size: 18px; font-weight: 700; }
+header p       { font-size: 12px; opacity: 0.8; margin-top: 2px; }
+header .spacer { flex: 1; } /* pushes Refresh button to the right */
+
+
+/* ── 4. LOADING BAR + ERROR BANNER ───────────────────────── */
+#loadingBar {
+  height: 3px;
+  background: linear-gradient(90deg, #a78bfa, #4f46e5);
+  display: none; /* JS sets display:block to show it */
+  animation: loadSlide 1.2s infinite;
+}
+@keyframes loadSlide {
+  0%   { transform: scaleX(0); transform-origin: left; }
+  50%  { transform: scaleX(1); transform-origin: left; }
+  100% { transform: scaleX(0); transform-origin: right; }
+}
+
+#errorMsg {
+  background: #fee2e2;
+  color: #dc2626;
+  padding: 10px 24px;
+  font-size: 13px;
+  display: none; /* JS sets display:block to show it */
+}
+
+
+/* ── 5. NAV TABS ──────────────────────────────────────────── */
+nav {
+  display: flex;
+  background: #fff;
+  border-bottom: 2px solid #e5e7eb;
+  padding: 0 20px;
+  overflow-x: auto;
+}
+nav button {
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  padding: 14px 16px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: #6b7280;
+  white-space: nowrap;
+  transition: color 0.15s;
+}
+nav button:hover  { color: #4f46e5; }
+nav button.active { color: #4f46e5; border-bottom-color: #4f46e5; }
+
+
+/* ── 6. TAB PANELS ────────────────────────────────────────── */
+/* All panels hidden by default */
+.tab        { display: none; padding: 20px; }
+/* Only the panel with class="tab active" is shown */
+.tab.active { display: block; }
+
+
+/* ── 7. CARDS ─────────────────────────────────────────────── */
+.card {
+  background: #fff;
+  border-radius: 12px;
   padding: 20px;
+  box-shadow: 0 2px 12px rgba(80, 80, 180, 0.07);
+  margin-bottom: 20px;
+}
+.card h2 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #3730a3;
+  margin-bottom: 14px;
 }
 
-h1 {
-  color: #2b6cb0;
-  margin-bottom: 30px;
+
+/* ── 8. FORM ROWS ─────────────────────────────────────────── */
+.form-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.form-row input,
+.form-row select {
+  padding: 8px 12px;
+  border: 1.5px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 13px;
+  flex: 1;
+  min-width: 140px;
+  transition: border-color 0.15s;
+}
+.form-row input:focus,
+.form-row select:focus {
+  outline: none;
+  border-color: #4f46e5;
 }
 
-h2 {
-  color: #1e4e8c;
-}
 
-table {
-  margin: 0 auto 20px;
-  border-collapse: collapse;
-  width: 80%;
-  background: white;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-}
+/* ── 9. TABLES ────────────────────────────────────────────── */
+.table-wrap { overflow-x: auto; }
 
-th, td {
-  border: 1px solid #ddd;
-  padding: 10px;
-}
+table { width: 100%; border-collapse: collapse; }
 
 th {
-  background-color: #edf2f7;
-}
-
-button {
-  background: #2b6cb0;
-  color: white;
-  border: none;
-  padding: 8px 14px;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-button:hover {
-  background: #1a365d;
-}
-
-.dashboard {
-  display: flex;
-  justify-content: space-around;
-  flex-wrap: wrap;
-  gap: 20px;
-}
-
-.card {
-  background: white;
-  padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-  width: 30%;
-  min-width: 280px;
-}
-
-#addUserSection {
-  margin-top: 15px;
-}
-
-#simulateWeek {
-  background: #48bb78;
-  color: white;
-  border: none;
-  padding: 8px 14px;
-  border-radius: 5px;
-  cursor: pointer;
-  margin-top: 10px;
-}
-
-#simulateWeek:hover {
-  background: #2f855a;
-}
-
-#moodTrends {
-  margin-top: 10px;
+  background: #f5f3ff;
+  padding: 10px 12px;
   text-align: left;
-  background: #edf2f7;
-  padding: 10px;
+  font-weight: 700;
+  color: #4f46e5;
+  white-space: nowrap;
+}
+td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #f3f4f6;
+  vertical-align: middle;
+}
+tr:last-child td { border-bottom: none; }
+tr:hover td      { background: #fafafa; }
+
+.empty-msg {
+  text-align: center;
+  color: #9ca3af;
+  padding: 28px !important;
+}
+
+/* Badges — colored pill labels */
+.badge        { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+.badge-green  { background: #dcfce7; color: #166534; }
+.badge-red    { background: #fee2e2; color: #dc2626; }
+.badge-yellow { background: #fef9c3; color: #854d0e; }
+.badge-blue   { background: #dbeafe; color: #1e40af; }
+.badge-gray   { background: #f3f4f6; color: #6b7280; }
+
+
+/* ── 10. BUTTONS ──────────────────────────────────────────── */
+.btn {
+  padding: 9px 18px;
+  border: none;
   border-radius: 8px;
-}
-
-#adminLogs {
-  list-style: none;
-  padding: 0;
-  max-width: 80%;
-  margin: 0 auto;
-}
-
-#adminLogs li {
-  background: #e2e8f0;
-  margin: 6px auto;
-  padding: 8px;
-  border-radius: 5px;
-  text-align: left;
-  animation: fadeIn 0.4s ease;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(-4px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-button.danger {
-  background: #e53e3e;
-  color: white;
-  border: none;
-  padding: 10px 16px;
-  border-radius: 6px;
-  margin-top: 10px;
   cursor: pointer;
-  font-weight: 600;
+  font-weight: 700;
+  font-size: 13px;
+  transition: opacity 0.15s;
 }
+.btn:hover { opacity: 0.88; }
 
-button.danger:hover {
-  background: #9b2c2c;
+/* Small buttons for inside table rows */
+.btn-sm {
+  padding: 5px 10px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  margin: 2px;
+  transition: opacity 0.15s;
+}
+.btn-sm:hover { opacity: 0.85; }
+
+/* Color variants */
+.btn-purple { background: #4f46e5; color: #fff; }
+.btn-blue   { background: #0891b2; color: #fff; }
+.btn-green  { background: #059669; color: #fff; }
+.btn-gray   { background: #6b7280; color: #fff; }
+
+
+/* ── 11. MODAL ────────────────────────────────────────────── */
+#assignModal {
+  display: none; /* hidden until JS sets display:flex */
+  position: fixed; /* covers the whole screen */
+  inset: 0;        /* top:0 right:0 bottom:0 left:0 */
+  background: rgba(0, 0, 0, 0.45);
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: 16px;
+}
+.modal-box {
+  background: #fff;
+  border-radius: 16px;
+  padding: 28px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+}
+.modal-box h3 { font-size: 16px; font-weight: 700; margin-bottom: 4px; color: #3730a3; }
+.modal-box p  { font-size: 13px; color: #6b7280; margin-bottom: 16px; }
+.modal-box input {
+  display: block;
+  width: 100%;
+  padding: 9px 12px;
+  border: 1.5px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+.modal-box input:focus { outline: none; border-color: #4f46e5; }
+.modal-actions         { display: flex; gap: 10px; margin-top: 6px; }
+.modal-actions .btn    { flex: 1; }
+
+
+/* ── 12. TOAST NOTIFICATION ───────────────────────────────── */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 12px 22px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s;
+  z-index: 200;
+  white-space: nowrap;
+}
+.toast.show         { opacity: 1; background: #1e1b4b; color: #fff; }
+.toast.show.warn    { background: #fef9c3; color: #854d0e; }
+.toast.show.error   { background: #fee2e2; color: #dc2626; }
+
+
+/* ── 13. MOOD TRENDS + ALERT LEGEND ──────────────────────── */
+.trend-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 4px;
+  border-bottom: 1px solid #f3f4f6;
+  font-size: 14px;
+}
+.trend-row:last-child { border-bottom: none; }
+.trend-row span       { font-size: 18px; letter-spacing: 2px; }
+
+.alert-legend {
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 14px;
+  line-height: 1.8;
 }

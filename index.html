@@ -2,66 +2,184 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Shift Scheduler Prototype</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Church Volunteer Manager</title>
   <link rel="stylesheet" href="style.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
-  <h1>🕒 Shift Scheduler Prototype</h1>
 
-  <main class="dashboard">
-    <!-- ===== Schedule Section ===== -->
-    <section id="schedule-section" class="card">
-      <h2><i class="fa-solid fa-calendar"></i> Current Schedule</h2>
-      <table id="schedule-table">
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>User</th>
-            <th>Status</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
+  <!-- HEADER -->
+  <header>
+    <span class="logo">⛪</span>
+    <div>
+      <h1>Church Volunteer Manager</h1>
+      <p>Powered by Google Sheets + SMS</p>
+    </div>
+    <div class="spacer"></div>
+    <button id="refreshBtn" class="btn btn-purple" style="background:rgba(255,255,255,.2);">🔄 Refresh</button>
+  </header>
 
-      <!-- Add User Section -->
-      <div id="addUserSection">
-        <input type="text" id="newUserName" placeholder="Enter new user name">
-        <button id="addUserBtn">Add User</button>
+  <!-- LOADING BAR (hidden until JS shows it) -->
+  <div id="loadingBar"></div>
+
+  <!-- ERROR BANNER (hidden until JS shows it) -->
+  <div id="errorMsg"></div>
+
+  <!-- NAV TABS -->
+  <nav>
+    <button class="active" onclick="switchTab('volunteers', this)">👥 Volunteers</button>
+    <button onclick="switchTab('assignments', this)">📅 Assignments</button>
+    <button onclick="switchTab('feedback', this)">💬 Feedback</button>
+    <button onclick="switchTab('alerts', this)">🚨 Alerts</button>
+  </nav>
+
+  <!-- TAB 1: VOLUNTEERS -->
+  <div id="tab-volunteers" class="tab active">
+
+    <div class="card">
+      <h2>➕ Add New Volunteer</h2>
+      <div class="form-row">
+        <input id="newVolName"    placeholder="Full Name" />
+        <input id="newVolPhone"   placeholder="Phone Number" />
+        <input id="newVolEmail"   placeholder="Email (optional)" />
+        <select id="newVolCarrier">
+          <option value="">Select Carrier…</option>
+          <option value="att">AT&amp;T</option>
+          <option value="tmobile">T-Mobile</option>
+          <option value="verizon">Verizon</option>
+          <option value="sprint">Sprint</option>
+          <option value="cricket">Cricket</option>
+          <option value="metropcs">Metro PCS</option>
+          <option value="boost">Boost</option>
+          <option value="uscellular">US Cellular</option>
+          <option value="virgin">Virgin</option>
+        </select>
+        <button id="addVolunteerBtn" class="btn btn-purple">+ Add &amp; Send Survey</button>
       </div>
-    </section>
+    </div>
 
-    <!-- ===== Mood Section ===== -->
-    <section id="mood-section" class="card">
-      <h2><i class="fa-solid fa-face-smile"></i> Shift Mood Survey</h2>
-      <select id="userSelect">
-        <option value="User1">User 1</option>
-        <option value="User2">User 2</option>
-      </select>
-      <select id="moodSelect">
-        <option value="1">😞 1 - Bad</option>
-        <option value="2">😐 2 - Okay</option>
-        <option value="3">😊 3 - Good</option>
-      </select>
-      <button id="submitMood">Submit Mood</button>
-
-      <!-- Simulate Week + Mood Trends -->
-      <div id="moodTools">
-        <button id="simulateWeek">Simulate Week</button>
-        <div id="moodTrends"></div>
+    <div class="card">
+      <h2>👥 All Volunteers</h2>
+      <div class="table-wrap">
+        <table id="volunteers-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Phone</th>
+              <th>Ministry Interest</th>
+              <th>Availability</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td colspan="6" class="empty-msg">Loading…</td></tr>
+          </tbody>
+        </table>
       </div>
-    </section>
+    </div>
 
-    <!-- ===== Admin Section ===== -->
-    <section id="admin-section" class="card">
-      <h2><i class="fa-solid fa-bell"></i> Admin Notifications</h2>
-      <ul id="adminLogs"></ul>
-      <button id="resetApp" class="danger">Reset App (Start Week 1)</button>
-    </section>
-  </main>
+  </div>
 
+  <!-- TAB 2: ASSIGNMENTS -->
+  <div id="tab-assignments" class="tab">
+    <div class="card">
+      <h2>📅 Service Assignments</h2>
+      <div class="table-wrap">
+        <table id="assignments-table">
+          <thead>
+            <tr>
+              <th>Volunteer</th>
+              <th>Date</th>
+              <th>Time</th>
+              <th>Role</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td colspan="6" class="empty-msg">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 3: FEEDBACK -->
+  <div id="tab-feedback" class="tab">
+    <div class="card">
+      <h2>📊 Mood Trends</h2>
+      <p style="font-size:13px;color:#6b7280;margin-bottom:12px">Last 5 service ratings per volunteer.</p>
+      <div id="moodTrends"></div>
+    </div>
+    <div class="card">
+      <h2>💬 Feedback Log</h2>
+      <div class="table-wrap">
+        <table id="mood-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Volunteer</th>
+              <th>Score</th>
+              <th>Notes / Incident Report</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td colspan="4" class="empty-msg">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 4: ALERTS -->
+  <div id="tab-alerts" class="tab">
+    <div class="card">
+      <h2>🚨 Pastor &amp; Mercy Team Alerts</h2>
+      <div class="alert-legend">
+        🔴 <strong>Mercy Team</strong> — 2 bad scores in a row → refer to Mercy Team<br>
+        🟡 <strong>1-on-1</strong> — 1 bad score OR 3 neutral in a row → schedule pastor check-in
+      </div>
+      <div class="table-wrap">
+        <table id="alerts-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Volunteer</th>
+              <th>Alert Type</th>
+              <th>Details</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td colspan="5" class="empty-msg">Loading…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL — lives OUTSIDE all tabs so tab CSS never affects it -->
+  <div id="assignModal">
+    <div class="modal-box">
+      <h3>📅 Assign to Service</h3>
+      <p id="assignVolName">Select a date, time, and role.</p>
+      <input type="hidden" id="assignVolId" />
+      <input type="date"   id="assignDate" />
+      <input type="time"   id="assignTime" />
+      <input type="text"   id="assignRole" placeholder="Role — e.g. Greeter, Worship, Usher" />
+      <div class="modal-actions">
+        <button id="modalCloseBtn" class="btn btn-gray">Cancel</button>
+        <button id="assignBtn"     class="btn btn-purple">📤 Send Schedule SMS</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="toast" class="toast"></div>
+
+  <!-- JavaScript — always last so HTML is loaded before JS runs -->
   <script src="app.js"></script>
+
 </body>
 </html>
