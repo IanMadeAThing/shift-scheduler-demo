@@ -1,100 +1,246 @@
-⛪ Volunteer Shift Scheduler Prototype
+# Building a Church Volunteer Management System from Scratch
+### A Developer's Journal — October 2025 to April 2026
 
-This is a simple web app built to help pastors and church administrators schedule volunteers for shifts or events and check in with them based on mood surveys.
+---
 
-The goal is to help churches support volunteers better, catch early signs of burnout, and streamline scheduling for small ministry teams.
+## Overview
 
-🌟 Features
+What started as a simple hackathon prototype has grown into a full-stack volunteer management platform built specifically for church operations. This journal documents the complete development process — the decisions made, the problems solved, and the lessons learned along the way.
 
-🗓 Volunteer Scheduling
+**Live app:** https://ianmadeathing.github.io/shift-scheduler-demo
+**Stack:** Vanilla JavaScript · Google Apps Script · Google Sheets · GitHub Pages
 
-Add or remove volunteers from event shifts
+---
 
-Cancel or undo cancellations
+## October 2025 — The MVP
 
-Add new volunteers instantly
+The project started at a **FaithTech event** — a hackathon focused on building tools for faith communities. The goal was simple: give pastors a way to manage volunteer schedules without relying on group texts and spreadsheets.
 
-😄 Mood Tracking & Admin Alerts
-Volunteers can log their mood after serving.
-The system automatically flags patterns:
+The first version was a single HTML file with inline styles, hardcoded users, and `localStorage` as the database. It had a basic schedule table, a mood survey with three options, and a simulate week button. It worked well enough to prove the concept.
 
-Good (😊) — If good for 5 shifts in a row ➝ schedule a day off and send a text check-in.
+**What the MVP had:**
+- Current Schedule table with cancel/undo actions
+- Basic mood submission (1/2/3 scoring)
+- Mood trend display per user
+- Admin notifications panel
+- Simulate Week and Reset App buttons
+- All data stored in `localStorage`
 
-Okay (😐) — If okay for 3 shifts in a row ➝ schedule a day off and face-to-face check-in.
+**The core problem with localStorage:** Data only existed on one device and disappeared on reset. For a real team tool, this was a non-starter.
 
-Bad (😞) — If bad for 2 shifts ➝ schedule a day off, face-to-face meeting, and alert the Mercy Team to offer support.
+---
 
-🧰 Admin Tools
+## January 2026 — Rethinking the Architecture
 
-View alerts in a live admin log
+After the FaithTech event, it became clear that the app needed a real backend. The question was which one made sense for a small church with no IT budget.
 
-Simulate weeks quickly (for testing/demo)
+After evaluating several options, the decision was made to use **Google Apps Script as a serverless backend with Google Sheets as the database.** Here's why this won:
 
-Reset all data to “Week 1” with one click
+- **Zero cost.** Google's free tier covers the entire use case.
+- **No server to maintain.** Apps Script runs on Google's infrastructure.
+- **Pastors can open the database** like a normal spreadsheet. No technical knowledge required.
+- **Native integrations** with Gmail and Google Calendar — tools the church already uses.
 
-👥 Team Ready
+The architecture settled on:
 
-Designed to support a small 4-person team to test the idea
+```
+Browser (GitHub Pages)
+    ↕  HTTP (fetch API)
+Google Apps Script (Web App)
+    ↕  SpreadsheetApp / GmailApp / CalendarApp
+Google Sheets · Gmail · Google Calendar
+```
 
-Scalable for larger volunteer groups in the future
+### The SMS Problem
 
-🧭 Why This Matters
+The biggest unsolved problem at this point was how to send text messages to volunteers. Every SMS API (Twilio, Vonage, MessageBird, Textbee) either required:
 
-Volunteers are the backbone of church ministry. This app helps:
+- An Android phone as a gateway
+- Business verification that kept locking the account
+- Credit card information and paid plans
 
-Pastors keep track of morale
+After weeks of hitting walls with every service, a different approach was discovered: **carrier email-to-SMS gateways.**
 
-Admins schedule smarter
+Every major US carrier exposes a hidden email address that forwards to SMS:
 
-Mercy Teams offer help proactively
+```
+5551234567@tmomail.net     → T-Mobile
+5551234567@txt.att.net     → AT&T
+5551234567@vtext.com       → Verizon
+```
 
-Volunteers feel seen and supported — not just scheduled.
+By sending an email through Gmail to `{phonenumber}@{carrierdomain}`, the message arrives as a real SMS on the volunteer's phone. **Free. No API. No signup. No Android phone required.**
 
-This can build healthier volunteer culture and encourage more people to serve.
+This was the breakthrough the project needed.
 
-🚀 How to Use
+---
 
-Visit the live link (from GitHub Pages).
+## February–March 2026 — Building the Real System
 
-Use the schedule table to cancel or undo shifts.
+With the architecture decided, development began on the three core files:
 
-Submit moods to see automated admin alerts.
+### `Code.gs` — The Backend
 
-Use “Simulate Week” to test the system quickly.
+The Apps Script backend was designed around a clean separation of concerns from the start. Every function has one job. Private helpers use an underscore prefix. All configuration lives in a single `CONFIG` object at the top of the file.
 
-Add volunteers dynamically and reset when done.
+**The four sheet tabs created by `setup()`:**
+- `Volunteers` — stores all volunteer records
+- `Assignments` — tracks service assignments
+- `Mood Log` — records post-service feedback scores
+- `Alerts` — logs mercy team and 1-on-1 flags
 
-🧰 Tech Stack
+**The three automated SMS flows:**
 
-HTML5 — Structure
+1. **Onboarding** — Pastor adds a volunteer → SMS fires with a Google Form link → volunteer fills out their availability and ministry interests → form response auto-populates the Volunteers sheet
+2. **Schedule** — Pastor assigns a volunteer to a service → SMS fires with date, time, and role → Google Calendar invite sent to their email
+3. **Feedback** — Service ends → Pastor clicks Send Feedback → SMS fires with a post-service survey link → response logged to Mood Log sheet
 
-CSS3 — Styling
+**The alert logic** was the most interesting engineering challenge. The system needed to detect patterns across multiple submissions, not just react to a single score:
 
-JavaScript — Logic and mood tracking
+```
+2 bad scores in a row   → Mercy Team referral
+1 bad score             → Pastor 1-on-1
+3 neutral scores in row → Pastor 1-on-1 (re-engagement)
+All submissions         → Pastor notified regardless
+```
 
-LocalStorage — Keeps data stored in browser (no backend required)
+This was implemented using `Array.slice(-3)` and `Array.every()` to check a sliding window of the last three submissions.
 
-GitHub Pages — Free hosting
+**The Web App API** uses a dispatch table pattern for routing instead of if/else chains:
 
-📈 Future Improvements (Vision)
+```javascript
+const handlers = {
+  getVolunteers:  () => ({ volunteers:  _getRows(SHEETS.VOLUNTEERS)  }),
+  getAssignments: () => ({ assignments: _getRows(SHEETS.ASSIGNMENTS) }),
+  getMoodLog:     () => ({ moodLog:     _getRows(SHEETS.MOOD)        }),
+  getAlerts:      () => ({ alerts:      _getRows(SHEETS.ALERTS)      }),
+};
+```
 
-🔔 Automated text/email notifications to volunteers
+Adding a new endpoint is a single line. The entire `doPost` function is wrapped in a top-level try/catch so any error anywhere in the call chain returns clean JSON instead of an unhandled exception.
 
-🧠 AI-powered support suggestions for Mercy Teams
+### `app.js` — The Frontend Brain
 
-📅 Multi-week scheduling dashboard
+The frontend was built around a single architectural principle: **centralized state as the single source of truth.**
 
-📊 Mood trend analytics for leadership
+```javascript
+const state = {
+  volunteers:  [],
+  assignments: [],
+  moodLog:     [],
+  alerts:      [],
+  loading:     false,
+  error:       null,
+};
+```
 
-🙏 Credits
+All data lives here. Render functions only read from state. Action functions write to state then call `renderAll()`. This makes bugs easy to find — if something looks wrong on screen, you check state first.
 
-Developed as a class demo for volunteer management technology
+**Key architectural decisions:**
 
-Inspired by real church admin workflows
+- `Promise.all()` for parallel data loading — all four API requests fire simultaneously instead of sequentially, making initial load ~4x faster
+- `try/catch` on every async operation — the app never crashes silently
+- `_escape()` on all user data before inserting into `innerHTML` — XSS prevention
+- Optimistic updates on non-critical operations like resolving alerts
 
-Built with ❤️ to support servant leaders
+### `index.html` + `style.css` — The UI
 
-📢 License
+The initial UI was built in three phases, each one deliberately before any JavaScript was written. The goal was to separate concerns completely:
 
-This project is released as open source for learning and demonstration.
-You are free to fork or modify it for your own ministry team.
+**Phase 1 — Skeleton:** Raw HTML structure with no styling. Every element gets its `id` and `class` before a single line of CSS is written.
+
+**Phase 2 — CSS design system:** Reset, variables, layout, cards, tables, badges, buttons — all defined as reusable classes. The card pattern (`class="card"`) is defined once and used everywhere. Changing the card style means changing one CSS rule, not hunting through the file.
+
+**Phase 3 — Tabs:** The tab system uses a single trick:
+```css
+.tab        { display: none; }
+.tab.active { display: block; }
+```
+All panels exist in the DOM simultaneously. JavaScript swaps the `active` class on click. No frameworks needed.
+
+---
+
+## April 2026 — Deployment, Debugging, and the UI Overhaul
+
+### Transferring Ownership
+
+The project started in a temporary GitHub account used during the hackathon. In April, the repo was transferred to the main account at `IanMadeAThing/shift-scheduler-demo` and GitHub Pages was re-enabled.
+
+**Lesson learned:** Git never forgets. The full commit history transferred with the repo, showing the complete progression from MVP to finished product. This is exactly what you want for a portfolio project.
+
+### The CORS Bug
+
+The most frustrating debugging session of the project turned out to have the simplest explanation.
+
+The app worked perfectly when the API URL was pasted directly into the browser. But the app kept showing a connection error. Two hours of investigating the Apps Script deployment, redeployments, and permission settings later — the issue was identified.
+
+The `SHEET_API_URL` in `app.js` still contained the placeholder text:
+```javascript
+const SHEET_API_URL = "https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec";
+```
+
+One line. That was it.
+
+**Lesson learned:** Always grep for placeholder strings before deploying.
+
+### The UI Overhaul
+
+With the backend functional, attention turned to the front end. The original UI, while functional, read as a prototype. Three concept mockups were generated before writing any code:
+
+- **Concept A** — Minimal stat cards with a personal greeting
+- **Concept B** — Dark icon sidebar, enterprise-style
+- **Concept C** — Top nav with purple hero banner (chosen)
+
+Concept C was selected for its alignment with the church color scheme and its clarity for non-technical users. The key changes:
+
+**Hero banner** — replaces the four colored stat cards with a single purple gradient banner showing the total volunteer count, with three smaller mini-stat cards below for assignments, feedback, and alerts.
+
+**White sidebar (desktop)** — replaces the top nav on desktop. The sidebar collapses to icon-only on tablets (769–1024px).
+
+**Mobile single-page scroll** — on screens under 768px, the sidebar hides completely and all tabs stack vertically. No tab switching on mobile — just scroll. This matches the UX pattern of native mobile apps.
+
+**Error toast** — the full-width red error banner was replaced with a small floating card at the bottom of the screen with an info icon, dismiss button, and slide-up animation. Much less alarming, much more professional.
+
+**Volunteer cards** — plain table rows replaced with avatar cards. Each volunteer gets an initials avatar generated from their name, with action buttons inline.
+
+**Shift cards** — assignment rows replaced with left-bordered cards showing volunteer name, role, date and time at a glance.
+
+---
+
+## Current State — April 25, 2026
+
+**What's fully working:**
+- ✅ Dashboard with hero banner and live stats
+- ✅ Volunteer management with SMS onboarding
+- ✅ Service assignments with SMS + Google Calendar
+- ✅ Post-service feedback collection
+- ✅ Mercy team alert logic
+- ✅ Pastor email notifications on all feedback
+- ✅ White sidebar on desktop, mobile scroll on phone
+- ✅ Error handling throughout with user-friendly messages
+- ✅ Deployed at ianmadeathing.github.io/shift-scheduler-demo
+
+**What's in progress:**
+- 🔄 SMS testing with real team members on active smartphones
+- 🔄 Form trigger automation (currently manual via Apps Script UI)
+- 🔄 Volunteer landing page for public-facing onboarding link
+
+**What's next:**
+- Mobile error toast (collapsed ! icon that expands on tap)
+- Volunteer landing page as a separate GitHub Pages repo
+- SMS confirmation testing across carriers
+
+---
+
+## Reflections
+
+The most valuable decision made in this project was choosing Google Apps Script over a traditional Node.js backend. It eliminated the need for a hosted server, removed the entire DevOps overhead, and kept the cost at zero — which matters enormously for a small church with no IT budget.
+
+The SMS gateway approach is the kind of solution that only emerges after exhausting every conventional option. Sometimes the best architecture isn't the one in the tutorial.
+
+The hardest part wasn't the code. It was the months of momentum lost to SMS services that wouldn't let you sign up, APIs that locked accounts on first use, and platforms that required business verification for a church volunteer app. Persistence through that friction is what got this to a working product.
+
+---
+
+*Built with vanilla JavaScript, Google Apps Script, Google Sheets, and GitHub Pages.*
+*No frameworks. No paid APIs. No monthly bills.*
