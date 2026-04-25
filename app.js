@@ -27,7 +27,7 @@
  * Deploy → New Deployment → Web App → copy the URL.
  * @type {string}
  */
-const SHEET_API_URL = "https://script.google.com/macros/s/AKfycbwr8BJJb4SZN2QJLTy2Yht18hp4M8sxsGPdJwUFffn3vNEfylxoDspdpaiD6L9n8hA/exec";
+const SHEET_API_URL = "https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec";
 
 /**
  * Maps carrier keys to human-readable names for the dropdown.
