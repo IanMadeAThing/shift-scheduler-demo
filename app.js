@@ -18,7 +18,7 @@
  */
 
 
-// ============================================================
+// ============================================================ 
 // 1. CONFIG
 // ============================================================
 
@@ -27,7 +27,7 @@
  * Deploy → New Deployment → Web App → copy the URL.
  * @type {string}
  */
-const SHEET_API_URL = "https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec";
+const SHEET_API_URL = "https://script.google.com/macros/s/AKfycby3EdN77wsQUw2MO2MZ2vRooojlFKBhwUmvU0cs2naYQ1ts34jaHfysAHO_lCxgE5rV/exec";
 
 /**
  * Maps carrier keys to human-readable names for the dropdown.
@@ -36,6 +36,7 @@ const SHEET_API_URL = "https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exe
  */
 const CARRIERS = {
   att:        "AT&T",
+  mint:       "Mint Mobile",
   tmobile:    "T-Mobile",
   verizon:    "Verizon",
   sprint:     "Sprint",
@@ -44,6 +45,7 @@ const CARRIERS = {
   boost:      "Boost",
   uscellular: "US Cellular",
   virgin:     "Virgin",
+  tracfone: "TracFone",
 };
 
 /**
@@ -160,26 +162,26 @@ function renderAll() {
  * Each row has buttons to send the onboarding survey or open the assign modal.
  */
 function renderVolunteers() {
-  const tbody = document.querySelector("#volunteers-table tbody");
-  if (!tbody) return;
+  const listContainer = document.querySelector("#volunteers-list"); 
+  if (!listContainer) return;
 
   if (!state.volunteers.length) {
-    tbody.innerHTML = _emptyRow(6, "No volunteers yet. Add one above.");
+    listContainer.innerHTML = `<p class="empty-msg">No volunteers yet. Add one above.</p>`;
     return;
   }
 
-  tbody.innerHTML = state.volunteers.map(v => `
-    <tr>
-      <td>${_escape(v.Name)}</td>
-      <td>${_escape(v.Phone)}</td>
-      <td>${_escape(v["Ministry Interest"] || "—")}</td>
-      <td>${_escape(v.Availability || "—")}</td>
-      <td>${_badge(v.Status === "Active" ? "green" : "gray", v.Status)}</td>
-      <td>
-        <button class="btn-sm btn-purple" onclick="actionSendOnboarding('${v.ID}')">📋 Send Survey</button>
-        <button class="btn-sm btn-blue"   onclick="actionOpenAssignModal('${v.ID}', '${_escape(v.Name)}')">📅 Assign</button>
-      </td>
-    </tr>
+  // If you want to keep the "Card" style from your HTML, use this:
+  listContainer.innerHTML = state.volunteers.map(v => `
+    <div class="volunteer-card">
+      <div class="vol-info">
+        <strong>${_escape(v.Name)}</strong>
+        <span>${_escape(v.Phone)}</span>
+      </div>
+      <div class="vol-actions">
+        <button class="btn-sm btn-purple" onclick="actionSendOnboarding('${v.ID}')">📋 Survey</button>
+        <button class="btn-sm btn-blue" onclick="actionOpenAssignModal('${v.ID}', '${_escape(v.Name)}')">📅 Assign</button>
+      </div>
+    </div>
   `).join("");
 }
 
