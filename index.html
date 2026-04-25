@@ -8,159 +8,267 @@
 </head>
 <body>
 
-  <!-- HEADER -->
-  <header>
-    <span class="logo">⛪</span>
-    <div>
-      <h1>Church Volunteer Manager</h1>
-      <p>Powered by Google Sheets + SMS</p>
+  <!-- TOP NAV -->
+  <header class="top-nav">
+    <div class="nav-brand">
+      <div class="nav-logo">⛪</div>
+      <span class="nav-brand-name">Volunteer Manager</span>
     </div>
-    <div class="spacer"></div>
-    <button id="refreshBtn" class="btn btn-purple" style="background:rgba(255,255,255,.2);">🔄 Refresh</button>
+    <nav class="top-nav-links">
+      <button class="top-nav-item active" data-tab="dashboard"    onclick="switchTab('dashboard', this)">Home</button>
+      <button class="top-nav-item"        data-tab="volunteers"   onclick="switchTab('volunteers', this)">Volunteers</button>
+      <button class="top-nav-item"        data-tab="assignments"  onclick="switchTab('assignments', this)">Schedule</button>
+      <button class="top-nav-item"        data-tab="feedback"     onclick="switchTab('feedback', this)">Feedback</button>
+      <button class="top-nav-item"        data-tab="alerts"       onclick="switchTab('alerts', this)">Alerts</button>
+    </nav>
+    <div class="nav-right">
+      <button class="icon-btn" id="refreshBtn">🔄</button>
+      <div class="notification-bell" onclick="toggleNotifications()">
+        🔔
+        <span class="notif-badge" id="notifBadge" style="display:none">0</span>
+      </div>
+      <div class="avatar">P</div>
+    </div>
   </header>
 
-  <!-- LOADING BAR (hidden until JS shows it) -->
   <div id="loadingBar"></div>
+  <!-- ERROR TOAST (bottom of screen) -->
+  <div id="errorMsg">
+    <div class="error-inner">
+      <div class="error-icon">i</div>
+      <div class="error-content">
+        <div class="error-title">Connection Issue</div>
+        <div class="error-body" id="errorText">Could not load data. Check your API connection.</div>
+      </div>
+      <button class="error-close" onclick="document.getElementById('errorMsg').style.display='none'">✕</button>
+    </div>
+  </div>
 
-  <!-- ERROR BANNER (hidden until JS shows it) -->
-  <div id="errorMsg"></div>
+  <!-- NOTIFICATION PANEL -->
+  <div id="notifPanel" class="notif-panel hidden">
+    <div class="notif-header">
+      <strong>Notifications</strong>
+      <button onclick="toggleNotifications()">✕</button>
+    </div>
+    <div id="notifList" class="notif-list">
+      <p class="empty-msg">No notifications yet.</p>
+    </div>
+  </div>
 
-  <!-- NAV TABS -->
-  <nav>
-    <button class="active" onclick="switchTab('volunteers', this)">👥 Volunteers</button>
-    <button onclick="switchTab('assignments', this)">📅 Assignments</button>
-    <button onclick="switchTab('feedback', this)">💬 Feedback</button>
-    <button onclick="switchTab('alerts', this)">🚨 Alerts</button>
+  <!-- MAIN CONTENT -->
+  <main>
+
+    <!-- TAB: DASHBOARD -->
+    <div id="tab-dashboard" class="tab active">
+
+      <!-- Hero Banner -->
+      <div class="hero-banner">
+        <div class="hero-left">
+          <div class="hero-greeting" id="heroGreeting">Welcome back, Pastor</div>
+          <div class="hero-sub" id="heroSub">Saturday, April 25</div>
+        </div>
+        <div class="hero-right">
+          <div class="hero-num" id="heroNum">0</div>
+          <div class="hero-lbl">Volunteers active</div>
+        </div>
+      </div>
+
+      <!-- Mini Stats -->
+      <div class="mini-stats">
+        <div class="mini-stat">
+          <div class="mini-icon">📅</div>
+          <div class="mini-num" id="statAssignments">0</div>
+          <div class="mini-lbl">Assignments</div>
+        </div>
+        <div class="mini-stat">
+          <div class="mini-icon">💬</div>
+          <div class="mini-num" id="statFeedback">0</div>
+          <div class="mini-lbl">Feedback</div>
+        </div>
+        <div class="mini-stat">
+          <div class="mini-icon">🚨</div>
+          <div class="mini-num alert-num" id="statAlerts">0</div>
+          <div class="mini-lbl">Alerts</div>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="section-header">
+        <h2>Quick Actions</h2>
+      </div>
+      <div class="quick-actions">
+        <button class="action-card" onclick="switchTab('volunteers', document.querySelector('[data-tab=volunteers]'))">
+          <span>➕</span>
+          <p>Add Volunteer</p>
+        </button>
+        <button class="action-card" onclick="switchTab('assignments', document.querySelector('[data-tab=assignments]'))">
+          <span>📅</span>
+          <p>Assignments</p>
+        </button>
+        <button class="action-card" onclick="switchTab('feedback', document.querySelector('[data-tab=feedback]'))">
+          <span>💬</span>
+          <p>Feedback</p>
+        </button>
+        <button class="action-card" onclick="switchTab('alerts', document.querySelector('[data-tab=alerts]'))">
+          <span>🚨</span>
+          <p>Alerts</p>
+        </button>
+      </div>
+
+      <!-- Recent Volunteers -->
+      <div class="section-header">
+        <h2>Recent Volunteers</h2>
+        <button class="see-all" onclick="switchTab('volunteers', document.querySelector('[data-tab=volunteers]'))">See All →</button>
+      </div>
+      <div id="recentVolunteers" class="volunteer-cards"></div>
+
+      <!-- Upcoming Assignments -->
+      <div class="section-header">
+        <h2>Upcoming Assignments</h2>
+        <button class="see-all" onclick="switchTab('assignments', document.querySelector('[data-tab=assignments]'))">See All →</button>
+      </div>
+      <div id="upcomingAssignments" class="shift-cards"></div>
+
+    </div>
+
+    <!-- TAB: VOLUNTEERS -->
+    <div id="tab-volunteers" class="tab">
+
+      <div class="card">
+        <h2>➕ Add New Volunteer</h2>
+        <div class="form-grid">
+          <input id="newVolName"    placeholder="Full Name" />
+          <input id="newVolPhone"   placeholder="Phone Number" />
+          <input id="newVolEmail"   placeholder="Email (optional)" />
+          <select id="newVolCarrier">
+            <option value="">Select Carrier…</option>
+            <option value="att">AT&amp;T</option>
+            <option value="tmobile">T-Mobile</option>
+            <option value="verizon">Verizon</option>
+            <option value="sprint">Sprint</option>
+            <option value="cricket">Cricket</option>
+            <option value="metropcs">Metro PCS</option>
+            <option value="boost">Boost</option>
+            <option value="uscellular">US Cellular</option>
+            <option value="virgin">Virgin</option>
+            <option value="tracfone">TracFone</option>
+          </select>
+        </div>
+        <button id="addVolunteerBtn" class="btn btn-purple btn-full">+ Add &amp; Send Survey</button>
+      </div>
+
+      <div class="card">
+        <h2>👥 All Volunteers</h2>
+        <div class="volunteer-list" id="volunteers-list"></div>
+      </div>
+
+    </div>
+
+    <!-- TAB: ASSIGNMENTS -->
+    <div id="tab-assignments" class="tab">
+
+      <!-- Calendar Strip -->
+      <div class="card">
+        <h2>📅 Service Assignments</h2>
+        <div class="calendar-strip" id="calendarStrip"></div>
+      </div>
+
+      <div class="shift-cards" id="assignments-cards"></div>
+
+    </div>
+
+    <!-- TAB: FEEDBACK -->
+    <div id="tab-feedback" class="tab">
+
+      <div class="card">
+        <h2>📊 Mood Trends</h2>
+        <p class="subtitle">Last 5 service ratings per volunteer.</p>
+        <div id="moodTrends"></div>
+      </div>
+
+      <div class="card">
+        <h2>💬 Feedback Log</h2>
+        <div class="table-wrap">
+          <table id="mood-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Volunteer</th>
+                <th>Score</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td colspan="4" class="empty-msg">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- TAB: ALERTS -->
+    <div id="tab-alerts" class="tab">
+      <div class="card">
+        <h2>🚨 Pastor &amp; Mercy Team Alerts</h2>
+        <div class="alert-legend">
+          🔴 <strong>Mercy Team</strong> — 2 bad scores in a row<br>
+          🟡 <strong>1-on-1</strong> — 1 bad score OR 3 neutral in a row
+        </div>
+        <div class="table-wrap">
+          <table id="alerts-table">
+            <thead>
+              <tr>
+                <th>Date</th><th>Volunteer</th>
+                <th>Alert Type</th><th>Details</th><th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td colspan="5" class="empty-msg">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- BOTTOM NAV (mobile only) -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" data-tab="dashboard"   onclick="switchTab('dashboard', this)">  <span>🏠</span><p>Home</p></button>
+    <button class="nav-item"        data-tab="volunteers"  onclick="switchTab('volunteers', this)"> <span>👥</span><p>Volunteers</p></button>
+    <button class="nav-item"        data-tab="assignments" onclick="switchTab('assignments', this)"><span>📅</span><p>Schedule</p></button>
+    <button class="nav-item"        data-tab="feedback"    onclick="switchTab('feedback', this)">   <span>💬</span><p>Feedback</p></button>
+    <button class="nav-item"        data-tab="alerts"      onclick="switchTab('alerts', this)">     <span>🚨</span><p>Alerts</p></button>
   </nav>
 
-  <!-- TAB 1: VOLUNTEERS -->
-  <div id="tab-volunteers" class="tab active">
+    </main>
+  </div><!-- end app-shell -->
 
-    <div class="card">
-      <h2>➕ Add New Volunteer</h2>
-      <div class="form-row">
-        <input id="newVolName"    placeholder="Full Name" />
-        <input id="newVolPhone"   placeholder="Phone Number" />
-        <input id="newVolEmail"   placeholder="Email (optional)" />
-        <select id="newVolCarrier">
-          <option value="">Select Carrier…</option>
-          <option value="att">AT&amp;T</option>
-          <option value="tmobile">T-Mobile</option>
-          <option value="verizon">Verizon</option>
-          <option value="sprint">Sprint</option>
-          <option value="cricket">Cricket</option>
-          <option value="metropcs">Metro PCS</option>
-          <option value="boost">Boost</option>
-          <option value="uscellular">US Cellular</option>
-          <option value="virgin">Virgin</option>
-          <option value="tracfone">TracFone</option>
-        </select>
-        <button id="addVolunteerBtn" class="btn btn-purple">+ Add &amp; Send Survey</button>
-      </div>
+  <!-- NOTIFICATION PANEL -->
+  <div id="notifPanel" class="notif-panel hidden">
+    <div class="notif-header">
+      <strong>Notifications</strong>
+      <button onclick="toggleNotifications()">✕</button>
     </div>
-
-    <div class="card">
-      <h2>👥 All Volunteers</h2>
-      <div class="table-wrap">
-        <table id="volunteers-table">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Phone</th>
-              <th>Ministry Interest</th>
-              <th>Availability</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr><td colspan="6" class="empty-msg">Loading…</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- TAB 2: ASSIGNMENTS -->
-  <div id="tab-assignments" class="tab">
-    <div class="card">
-      <h2>📅 Service Assignments</h2>
-      <div class="table-wrap">
-        <table id="assignments-table">
-          <thead>
-            <tr>
-              <th>Volunteer</th>
-              <th>Date</th>
-              <th>Time</th>
-              <th>Role</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr><td colspan="6" class="empty-msg">Loading…</td></tr>
-          </tbody>
-        </table>
-      </div>
+    <div id="notifList" class="notif-list">
+      <p class="empty-msg">No notifications yet.</p>
     </div>
   </div>
 
-  <!-- TAB 3: FEEDBACK -->
-  <div id="tab-feedback" class="tab">
-    <div class="card">
-      <h2>📊 Mood Trends</h2>
-      <p style="font-size:13px;color:#6b7280;margin-bottom:12px">Last 5 service ratings per volunteer.</p>
-      <div id="moodTrends"></div>
-    </div>
-    <div class="card">
-      <h2>💬 Feedback Log</h2>
-      <div class="table-wrap">
-        <table id="mood-table">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Volunteer</th>
-              <th>Score</th>
-              <th>Notes / Incident Report</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr><td colspan="4" class="empty-msg">Loading…</td></tr>
-          </tbody>
-        </table>
+  <!-- ERROR TOAST (bottom of screen) -->
+  <div id="errorMsg">
+    <div class="error-inner">
+      <div class="error-icon">i</div>
+      <div class="error-content">
+        <div class="error-title">Connection Issue</div>
+        <div class="error-body" id="errorText">Could not load data. Check your API connection.</div>
       </div>
+      <button class="error-close" onclick="document.getElementById('errorMsg').style.display='none'">✕</button>
     </div>
   </div>
 
-  <!-- TAB 4: ALERTS -->
-  <div id="tab-alerts" class="tab">
-    <div class="card">
-      <h2>🚨 Pastor &amp; Mercy Team Alerts</h2>
-      <div class="alert-legend">
-        🔴 <strong>Mercy Team</strong> — 2 bad scores in a row → refer to Mercy Team<br>
-        🟡 <strong>1-on-1</strong> — 1 bad score OR 3 neutral in a row → schedule pastor check-in
-      </div>
-      <div class="table-wrap">
-        <table id="alerts-table">
-          <thead>
-            <tr>
-              <th>Date</th>
-              <th>Volunteer</th>
-              <th>Alert Type</th>
-              <th>Details</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr><td colspan="5" class="empty-msg">Loading…</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL — lives OUTSIDE all tabs so tab CSS never affects it -->
+  <!-- ASSIGN MODAL -->
   <div id="assignModal">
     <div class="modal-box">
       <h3>📅 Assign to Service</h3>
@@ -171,16 +279,37 @@
       <input type="text"   id="assignRole" placeholder="Role — e.g. Greeter, Worship, Usher" />
       <div class="modal-actions">
         <button id="modalCloseBtn" class="btn btn-gray">Cancel</button>
-        <button id="assignBtn"     class="btn btn-purple">📤 Send Schedule SMS</button>
+        <button id="assignBtn"     class="btn btn-purple">📤 Send SMS</button>
       </div>
     </div>
   </div>
 
-  <!-- TOAST NOTIFICATION -->
-  <div id="toast" class="toast"></div>
-
-  <!-- JavaScript — always last so HTML is loaded before JS runs -->
+  <div class="toast" id="toast"></div>
   <script src="app.js"></script>
 
+  <script>
+    document.getElementById("heroSub").textContent =
+      new Date().toLocaleDateString("en-US", { weekday:"long", month:"long", day:"numeric" });
+
+    const strip = document.getElementById("calendarStrip");
+    if (strip) {
+      const days = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+      for (let i = 0; i < 7; i++) {
+        const d = new Date();
+        d.setDate(d.getDate() + i);
+        const btn = document.createElement("div");
+        btn.className = "cal-day" + (i === 0 ? " active" : "");
+        btn.innerHTML = `<span>${days[d.getDay()]}</span><strong>${d.getDate()}</strong>`;
+        strip.appendChild(btn);
+      }
+    }
+    function toggleNotifications() {
+      document.getElementById("notifPanel").classList.toggle("hidden");
+    }
+
+    // Mirror refresh button
+    document.getElementById("refreshBtnMobile")
+      ?.addEventListener("click", () => loadAllData());
+  </script>
 </body>
 </html>
